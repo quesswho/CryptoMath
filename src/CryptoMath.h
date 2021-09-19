@@ -34,12 +34,6 @@
 
 unsigned char* md5Hash(unsigned char* message, uint64_t length, unsigned char* digest)
 {
-	// Magic initialization constants
-	unsigned int magic[4] = {
-		0x67452301, 0xefcdab89,
-		0x98badcfe, 0x10325476
-	};
-
 	// Pre-processing //
 	unsigned int paddedLength = (((length + 8) >> 6) + 1) << 6; // Reserve 8 bytes so that length can be stored. Always a multiple of 64
 	unsigned char* paddedMesssage;
@@ -48,6 +42,12 @@ unsigned char* md5Hash(unsigned char* message, uint64_t length, unsigned char* d
 	paddedMesssage[length] = 0x80; // Append 1 bit to the end of the message
 	uint64_t lengthInBits = length * 8;
 	memmove(paddedMesssage + paddedLength - 8, &lengthInBits, 8);
+
+	// Magic initialization constants
+	unsigned int magic[4] = {
+		0x67452301, 0xefcdab89,
+		0x98badcfe, 0x10325476
+	};
 
 	// For each 64 byte chunk //
 	for (int chunk = 0; chunk < paddedLength >> 6; chunk++)
@@ -138,5 +138,19 @@ unsigned char* md5Hash(unsigned char* message, uint64_t length, unsigned char* d
 	}
 	free(paddedMesssage);
 	memmove(digest, magic, 16);
+	return digest;
+}
+
+unsigned char* sha1Hash(unsigned char* message, uint64_t length, unsigned char* digest)
+{
+	// Pre-processing //
+	unsigned int paddedLength = (((length + 8) >> 6) + 1) << 6; // Reserve 8 bytes so that length can be stored. Always a multiple of 64
+	unsigned char* paddedMesssage;
+	paddedMesssage = (unsigned char*)calloc(paddedLength, 1);
+	memcpy(paddedMesssage, message, length);
+	paddedMesssage[length] = 0x80; // Append 1 bit to the end of the message
+	uint64_t lengthInBits = length * 8;
+	memmove(paddedMesssage + paddedLength - 8, &lengthInBits, 8);
+
 	return digest;
 }
