@@ -15,10 +15,10 @@ int main()
 	int len = strlen(str);
 	clock_t start = clock();
 	for(int i = 0; i < iterations; i++)
-		md5Hash(str, len, hash);
+		md5_message(str, len, hash);
 	printf("%.2fMH/s\n", (double)iterations / ((double)(clock() - start) / CLOCKS_PER_SEC * 1000000));
 #endif
-	md5Hash(str, strlen(str), hash);
+	md5_message(str, strlen(str), hash);
 	for (int i = 0; i < 16; i++)
 		printf("%02x", (unsigned int)(unsigned char)hash[i]);
 

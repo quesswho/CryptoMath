@@ -1,8 +1,8 @@
 #include "cryptomath.h"
 
-unsigned char* md5Hash(const char* message, const uint64_t length, uint8_t digest[16])
+void md5_message(const char* message, const uint64_t length, uint8_t digest[16])
 {
-	// Defines
+	// Calculation Macros
 	#define MD5_FUNCEND(a, b, c, d, f, s)\
 		((a) = (d));\
 		((d) = (c));\
@@ -10,20 +10,25 @@ unsigned char* md5Hash(const char* message, const uint64_t length, uint8_t diges
 		((b) = (b) + ROL32((f), (s)))
 
 	#define MD5_FUNCF(a, b, c, d, f, k, m, s)\
-		((f) = ((d) ^ ((b) & ((c) ^ (d)))) + (a) + (k) + (m));\
+		((f) = MD5_F((b), (c), (d)) + (a) + (k) + (m));\
 		MD5_FUNCEND((a), (b), (c), (d), (f), (s))
 
 	#define MD5_FUNCG(a, b, c, d, f, k, m, s)\
-		((f) = ((c) ^ ((d) & ((b) ^ (c)))) + (a) + (k) + (m));\
+		((f) = MD5_G((b), (c), (d)) + (a) + (k) + (m));\
 		MD5_FUNCEND((a), (b), (c), (d), (f), (s))
 
 	#define MD5_FUNCH(a, b, c, d, f, k, m, s)\
-		((f) = ((b) ^ (c) ^ (d)) + (a) + (k) + (m));\
+		((f) = MD5_H((b), (c), (d)) + (a) + (k) + (m));\
 		MD5_FUNCEND((a), (b), (c), (d), (f), (s))
 
 	#define MD5_FUNCI(a, b, c, d, f, k, m, s)\
-		((f) = ((c) ^ ((b) | (~d))) + (a) + (k) + (m));\
+		((f) = MD5_I((b), (c), (d)) + (a) + (k) + (m));\
 		MD5_FUNCEND((a), (b), (c), (d), (f), (s))
+
+    #define MD5_F(b, c, d) ((d) ^ ((b) & ((c) ^ (d))))
+	#define MD5_G(b, c, d) ((c) ^ ((d) & ((b) ^ (c))))
+	#define MD5_H(b, c, d) ((b) ^ (c) ^ (d))
+	#define MD5_I(b, c, d) ((c) ^ ((b) | (~d)))
 
 	// Pre-processing //
 	unsigned int paddedLength = (((length + 8) >> 6) + 1) << 6; // Reserve 8 bytes so that length can be stored. Always a multiple of 64
@@ -38,7 +43,7 @@ unsigned char* md5Hash(const char* message, const uint64_t length, uint8_t diges
 	unsigned int magic[4] = {
 		0x67452301, 0xefcdab89,
 		0x98badcfe, 0x10325476
-	};	
+	};
 
 	// For each 64 byte chunk //
 	for (int chunk = 0; chunk < paddedLength >> 6; chunk++)
@@ -57,7 +62,7 @@ unsigned char* md5Hash(const char* message, const uint64_t length, uint8_t diges
 		for (int i = 0; i < 64; i++)
 			K[i] = floor(4294967296.0 * fabs(sin(i + 1)));
 		*/
-
+		
 		MD5_FUNCF(A, B, C, D, F, 0xd76aa478, M[0], 7);
 		MD5_FUNCF(A, B, C, D, F, 0xe8c7b756, M[1], 12);
 		MD5_FUNCF(A, B, C, D, F, 0x242070db, M[2], 17);
@@ -74,6 +79,7 @@ unsigned char* md5Hash(const char* message, const uint64_t length, uint8_t diges
 		MD5_FUNCF(A, B, C, D, F, 0xfd987193, M[13], 12);
 		MD5_FUNCF(A, B, C, D, F, 0xa679438e, M[14], 17);
 		MD5_FUNCF(A, B, C, D, F, 0x49b40821, M[15], 22);
+		
 		MD5_FUNCG(A, B, C, D, F, 0xf61e2562, M[1], 5);
 		MD5_FUNCG(A, B, C, D, F, 0xc040b340, M[6], 9);
 		MD5_FUNCG(A, B, C, D, F, 0x265e5a51, M[11], 14);
@@ -90,6 +96,7 @@ unsigned char* md5Hash(const char* message, const uint64_t length, uint8_t diges
 		MD5_FUNCG(A, B, C, D, F, 0xfcefa3f8, M[2], 9);
 		MD5_FUNCG(A, B, C, D, F, 0x676f02d9, M[7], 14);
 		MD5_FUNCG(A, B, C, D, F, 0x8d2a4c8a, M[12], 20);
+		
 		MD5_FUNCH(A, B, C, D, F, 0xfffa3942, M[5], 4);
 		MD5_FUNCH(A, B, C, D, F, 0x8771f681, M[8], 11);
 		MD5_FUNCH(A, B, C, D, F, 0x6d9d6122, M[11], 16);
@@ -130,10 +137,9 @@ unsigned char* md5Hash(const char* message, const uint64_t length, uint8_t diges
 	}
     free(paddedMessage);
 	memmove(digest, magic, 16);
-	return digest;
 }
 
-unsigned char* sha1Hash(const char* message, uint64_t length, uint8_t digest[20])
+void sha1_message(const char* message, uint64_t length, uint8_t digest[20])
 {
 	// Pre-processing //
 	unsigned int paddedLength = (((length + 8) >> 6) + 1) << 6; // Reserve 8 bytes so that length can be stored. Always a multiple of 64
@@ -143,6 +149,4 @@ unsigned char* sha1Hash(const char* message, uint64_t length, uint8_t digest[20]
 	paddedMesssage[length] = 0x80; // Append 1 bit to the end of the message
 	uint64_t lengthInBits = length * 8;
 	memmove(paddedMesssage + paddedLength - 8, &lengthInBits, 8);
-
-	return digest;
 }
