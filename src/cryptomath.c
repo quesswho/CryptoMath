@@ -27,30 +27,30 @@ unsigned char* md5Hash(const char* message, const uint64_t length, uint8_t diges
 
 	// Pre-processing //
 	unsigned int paddedLength = (((length + 8) >> 6) + 1) << 6; // Reserve 8 bytes so that length can be stored. Always a multiple of 64
-	unsigned char* paddedMesssage;
-	paddedMesssage = (unsigned char*)calloc(paddedLength, 1);
-	memcpy(paddedMesssage, message, length);
-	paddedMesssage[length] = 0x80; // Append 1 bit to the end of the message
+	unsigned char* paddedMessage;
+	paddedMessage = (unsigned char*)calloc(paddedLength, 1);
+	memcpy(paddedMessage, message, length);
+	paddedMessage[length] = 0x80; // Append 1 bit to the end of the message
 	uint64_t lengthInBits = length * 8;
-	memmove(paddedMesssage + paddedLength - 8, &lengthInBits, 8);
+	memmove(paddedMessage + paddedLength - 8, &lengthInBits, 8);
 
 	// Magic initialization constants
 	unsigned int magic[4] = {
 		0x67452301, 0xefcdab89,
 		0x98badcfe, 0x10325476
-	};
+	};	
 
 	// For each 64 byte chunk //
 	for (int chunk = 0; chunk < paddedLength >> 6; chunk++)
 	{
 		unsigned int M[16]; // Split padded message in to 16 integers
-		memmove(M, paddedMesssage + (chunk << 6), 64);
+        memmove(M, paddedMessage + (chunk << 6), 64);
 
-		unsigned int F = 3614090359 + M[0]; // Slightly precalculate the first value
-		unsigned int A = magic[3];
-		unsigned int D = magic[2];
-		unsigned int C = magic[1];
-		unsigned int B = magic[1] + ROL32(F, 7);
+		unsigned int A = magic[0];
+		unsigned int B = magic[1];
+		unsigned int C = magic[2];
+		unsigned int D = magic[3];
+		unsigned int F;
 
 		/* // Calculate K constants //
 		unsigned int K[64];
@@ -58,6 +58,7 @@ unsigned char* md5Hash(const char* message, const uint64_t length, uint8_t diges
 			K[i] = floor(4294967296.0 * fabs(sin(i + 1)));
 		*/
 
+		MD5_FUNCF(A, B, C, D, F, 0xd76aa478, M[0], 7);
 		MD5_FUNCF(A, B, C, D, F, 0xe8c7b756, M[1], 12);
 		MD5_FUNCF(A, B, C, D, F, 0x242070db, M[2], 17);
 		MD5_FUNCF(A, B, C, D, F, 0xc1bdceee, M[3], 22);
@@ -127,7 +128,7 @@ unsigned char* md5Hash(const char* message, const uint64_t length, uint8_t diges
 		magic[2] = magic[2] + C;
 		magic[3] = magic[3] + D;
 	}
-	free(paddedMesssage);
+    free(paddedMessage);
 	memmove(digest, magic, 16);
 	return digest;
 }
