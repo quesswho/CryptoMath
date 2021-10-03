@@ -1,3 +1,4 @@
+CC = gcc
 CPPFLAGS := -Iinclude -MMD -MP # (C) (P)re(P)rocessor not c++, -MMD -MP are used to generated header depends automatically
 CFLAGS := -Wall -O2
 LDFLAGS := -Llib
