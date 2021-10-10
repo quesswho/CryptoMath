@@ -30,11 +30,11 @@ void md5_message(const int8_t* message, const uint64_t length, uint8_t digest[16
 	} paddedMessage;
 
 	// Pre-processing //
-	unsigned int paddedLength = (((length + 8) >> 6) + 1) << 6; // Reserve 8 bytes so that length can be stored. Always a multiple of 64
-	paddedMessage.msg8 = (unsigned char*)calloc(paddedLength, 1);
+	uint32_t paddedLength = (((length + 8) >> 6) + 1) << 6; // Reserve 8 bytes so that length can be stored. Always a multiple of 64
+	paddedMessage.msg8 = (uint8_t*)calloc(paddedLength, 1); // calloc will allocate array with all elements as zero
 	memcpy(paddedMessage.msg8, message, length);
 	paddedMessage.msg8[length] = 0x80; // Append 1 bit to the end of the message
-	paddedMessage.msg64[((paddedLength - 8) >> 3)] = length << 3;
+	paddedMessage.msg64[((paddedLength - 8) >> 3)] = length << 3; // set last 8 bytes to the message length in bits
 
 	// Magic initialization constants
 	unsigned int magic[4] = {
@@ -52,13 +52,13 @@ void md5_message(const int8_t* message, const uint64_t length, uint8_t digest[16
 
 void md5_block(const uint32_t block[16], uint32_t digest[4])
 {
-	unsigned int A = digest[0];
-	unsigned int B = digest[1];
-	unsigned int C = digest[2];
-	unsigned int D = digest[3];
+	uint32_t A = digest[0];
+	uint32_t B = digest[1];
+	uint32_t C = digest[2];
+	uint32_t D = digest[3];
 
 	/* // Calculate K constants //
-	unsigned int K[64];
+	uint32_t K[64];
 	for (int i = 0; i < 64; i++)
 		K[i] = floor(4294967296.0 * fabs(sin(i + 1)));
 	*/

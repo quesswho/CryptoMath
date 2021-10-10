@@ -1,6 +1,7 @@
 *.vcxproj.filters
 *.vcxproj.user
 /.vs
+/.vscode
 /Debug
 /Release
 /x64
@@ -10,3 +11,6 @@
 *.d
 *.o
 *.gch
+GPATH
+GRTAGS
+GTAGS

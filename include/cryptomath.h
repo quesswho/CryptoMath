@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define FORCE_INLINE __attribute__((always_inline)) inline
+
 #define ROR32(x, n) (((x) >> (n)) | ((x) << (32 - (n))))
 #define ROL32(x, n) (((x) << (n)) | ((x) >> (32 - (n))))
 
@@ -12,6 +14,6 @@
 #define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
 
 void md5_message(const int8_t* message, const uint64_t length, uint8_t digest[16]);
-void md5_block(const uint32_t block[16], uint32_t digest[4]);
+void FORCE_INLINE md5_block(const uint32_t block[16], uint32_t digest[4]); 
 
 void sha1_message(const int8_t* message, uint64_t length, uint8_t digest[20]);
