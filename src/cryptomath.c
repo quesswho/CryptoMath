@@ -1,9 +1,43 @@
 #include "cryptomath.h"
 #include <stdio.h>
 
-void md5_message(const int8_t* message, const uint64_t length, uint8_t digest[16])
+void md5_message(const char* message, const size_t length, uint8_t digest[16])
 {
-	// Calculation Macros
+	union Message {
+		uint8_t* msg8;
+		uint32_t* msg32;	
+		uint64_t* msg64;
+	} unionMessage, signatureBlock;
+
+	const uint32_t signatureBlockLength = ((length & 0x3F) + 72) & (~0x3F); // ((length % 64) + 64 + 8) & (~0x3F). x & (~0x3F) will truncate last bits so that it's a multiple of 64
+	signatureBlock.msg8 = (uint8_t*)calloc(signatureBlockLength, 1);
+	memcpy(signatureBlock.msg8, message + (length & (~0x3F)), length & 0x3F);
+	signatureBlock.msg8[length & 0x3F] = 0x80; // Append 1 bit to the end of the message
+	signatureBlock.msg64[((signatureBlockLength - 8) >> 3)] = length << 3; // set last 8 bytes to the message length in bits
+
+	unionMessage.msg8 = (uint8_t*)message; // Assign to a union so that it can be represented as uint32_t
+
+	// Magic initialization constants
+	unsigned int magic[4] = {
+		0x67452301, 0xefcdab89,
+		0x98badcfe, 0x10325476
+	};
+
+	// For each 64 byte multiple of message //
+	for (int block = 0; block < ((length >> 2) & ~0xF); block+=16)
+		md5_block(unionMessage.msg32 + block, magic);
+
+	// For each 64 byte signature block //
+	for (int block = 0; block < ((signatureBlockLength >> 2) & ~0xF); block+=16)
+		md5_block(signatureBlock.msg32 + block, magic);
+   
+	free(signatureBlock.msg8);
+	memmove(digest, magic, 16);
+}
+
+void md5_block(const uint32_t block[16], uint32_t digest[4])
+{
+	// MD5 Macros
 	#define MD5_FUNCEND(a, b, f, k, m, s) \
 		((a) = (f) + (a) + (k) + (m)); /* Evaluate f and assign to a */ \
 		((a) = (b) + ROL32((a), (s)));
@@ -23,35 +57,7 @@ void md5_message(const int8_t* message, const uint64_t length, uint8_t digest[16
 	#define MD5_H(b, c, d) ((b) ^ (c) ^ (d))
 	#define MD5_I(b, c, d) ((c) ^ ((b) | (~d)))
 
-	union Message {
-		uint8_t* msg8;
-		uint32_t* msg32;	
-		uint64_t* msg64;
-	} paddedMessage;
-
-	// Pre-processing //
-	uint32_t paddedLength = (((length + 8) >> 6) + 1) << 6; // Reserve 8 bytes so that length can be stored. Always a multiple of 64
-	paddedMessage.msg8 = (uint8_t*)calloc(paddedLength, 1); // calloc will allocate array with all elements as zero
-	memcpy(paddedMessage.msg8, message, length);
-	paddedMessage.msg8[length] = 0x80; // Append 1 bit to the end of the message
-	paddedMessage.msg64[((paddedLength - 8) >> 3)] = length << 3; // set last 8 bytes to the message length in bits
-
-	// Magic initialization constants
-	unsigned int magic[4] = {
-		0x67452301, 0xefcdab89,
-		0x98badcfe, 0x10325476
-	};
-
-	// For each 64 byte chunk //
-	for (int chunk = 0; chunk < paddedLength >> 6; chunk++)
-		md5_block(paddedMessage.msg32 + (chunk << 4), magic);
-    
-	free(paddedMessage.msg8);
-	memmove(digest, magic, 16);
-}
-
-void md5_block(const uint32_t block[16], uint32_t digest[4])
-{
+	// These will be optimized after inlining
 	uint32_t A = digest[0];
 	uint32_t B = digest[1];
 	uint32_t C = digest[2];
@@ -137,7 +143,7 @@ void md5_block(const uint32_t block[16], uint32_t digest[4])
 	digest[3] = digest[3] + D;
 }
 
-void sha1_message(const int8_t* message, uint64_t length, uint8_t digest[20])
+void sha1_message(const char* message, const size_t length, uint8_t digest[20])
 {
 	// Pre-processing //
 	unsigned int paddedLength = (((length + 8) >> 6) + 1) << 6; // Reserve 8 bytes so that length can be stored. Always a multiple of 64
