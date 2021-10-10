@@ -12,7 +12,7 @@
 #define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
 
 void md5_message(const char* message, const size_t length, uint8_t digest[16]);
-
 void md5_block(const uint32_t block[16], uint32_t digest[4]);
 
 void sha1_message(const char* message, const size_t length, uint8_t digest[20]);
+void sha1_block(const uint32_t block[16], uint32_t digest[5]);

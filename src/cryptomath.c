@@ -52,7 +52,7 @@ void md5_block(const uint32_t block[16], uint32_t digest[4])
 	#define MD5_FUNCI(a, b, c, d, k, m, s) \
 		MD5_FUNCEND((a), (b), MD5_I((b), (c), (d)), (k), (m), (s))
 
-    #define MD5_F(b, c, d) ((d) ^ ((b) & ((c) ^ (d))))
+	#define MD5_F(b, c, d) (((c) & (b)) | (~(b) & (d)))
 	#define MD5_G(b, c, d) (((d) & (b)) + (~(d) & (c)))
 	#define MD5_H(b, c, d) ((b) ^ (c) ^ (d))
 	#define MD5_I(b, c, d) ((c) ^ ((b) | (~d)))
@@ -145,12 +145,82 @@ void md5_block(const uint32_t block[16], uint32_t digest[4])
 
 void sha1_message(const char* message, const size_t length, uint8_t digest[20])
 {
-	// Pre-processing //
+	union Message {
+		uint8_t* msg8;
+		uint32_t* msg32;	
+		uint64_t* msg64;
+	} paddedMessage;
+
 	unsigned int paddedLength = (((length + 8) >> 6) + 1) << 6; // Reserve 8 bytes so that length can be stored. Always a multiple of 64
-	unsigned char* paddedMesssage;
-	paddedMesssage = (unsigned char*)calloc(paddedLength, 1);
-	memcpy(paddedMesssage, message, length);
-	paddedMesssage[length] = 0x80; // Append 1 bit to the end of the message
+	paddedMessage.msg8 = (unsigned char*)calloc(paddedLength, 1);
+	memcpy(paddedMessage.msg8, message, length);
+	paddedMessage.msg8[length] = 0x80; // Append 1 bit to the end of the message
 	uint64_t lengthInBits = length * 8;
-	memmove(paddedMesssage + paddedLength - 8, &lengthInBits, 8);
+	memmove(paddedMessage.msg8 + paddedLength - 8, &lengthInBits, 8);
+
+	unsigned int magic[5] = {
+		0x67452301, 0xefcdab89,
+		0x98badcfe, 0x10325476,
+		0xc3d2e1f0
+	};
+
+	// For each 64 byte signature block //
+	for (int block = 0; block < ((paddedLength >> 2) & ~0xF); block+=16)
+		sha1_block(paddedMessage.msg32 + block, magic);
+
+	free(paddedMessage.msg8);
+	memmove(digest, magic, 20);
+}
+
+void sha1_block(const uint32_t block[16], uint32_t digest[5])
+{
+	#define SHA1_F(b, c, d) (((b) & (c)) | ((~(b)) & (d)))
+	#define SHA1_G(b, c, d) ((b) ^ (c) ^ (d))
+	#define SHA1_H(b, c, d) (((b) & (c)) | ((b) & (d)) | ((c) & (d)))
+	#define SHA1_I(b, c, d) ((b) ^ (c) ^ (d))
+	
+	uint32_t* W = calloc(80, 4);
+
+	memcpy(W, block, 64);
+
+	uint32_t A = digest[0];
+	uint32_t B = digest[1];
+	uint32_t C = digest[2];
+	uint32_t D = digest[3];
+	uint32_t E = digest[4];
+
+	for(int t = 16; t < 80; t++) // Calculate W[0] .. W[79]
+		W[t] = ROL32(W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16], 1);
+	
+	uint32_t temp;
+	for(int t = 0; t < 80; t++)
+	{
+		if(t < 20)
+		{
+			temp = ROL32(A, 5) + SHA1_F(B, C, D) + E + W[t] + 0x5a827999;
+		}
+		else if(t < 40)
+		{
+			temp = ROL32(A, 5) + SHA1_G(B, C, D) + E + W[t] + 0x6ed9eba1;
+		}
+		else if(t < 60)
+		{
+			temp = ROL32(A, 5) + SHA1_H(B, C, D) + E + W[t] + 0x8f1bbcdc;
+		}
+		else
+		{
+			temp = ROL32(A, 5) + SHA1_I(B, C, D) + E + W[t] + 0xca62c1d6;
+		}
+		E = D;
+		D = C;
+		C = ROL32(B, 30);
+		B = A;
+		A = temp;
+	}
+	free(W);
+	digest[0] = digest[0] + A;
+	digest[1] = digest[1] + B;
+	digest[2] = digest[2] + C;
+	digest[3] = digest[3] + D;
+	digest[4] = digest[4] + E;
 }
