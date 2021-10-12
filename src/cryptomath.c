@@ -13,8 +13,8 @@ void md5_message(const char* message, const size_t length, uint8_t digest[16])
 	signatureBlock.msg8 = (uint8_t*)calloc(signatureBlockLength, 1);
 	memcpy(signatureBlock.msg8, message + (length & (~0x3F)), length & 0x3F);
 	signatureBlock.msg8[length & 0x3F] = 0x80; // Append 1 bit to the end of the message
-	signatureBlock.msg64[((signatureBlockLength - 8) >> 3)] = length << 3; // set last 8 bytes to the message length in bits
-
+	signatureBlock.msg64[((signatureBlockLength - 8) >> 3)] = (uint64_t)length << 3; // set last 8 bytes to the message length in bits
+	
 	unionMessage.msg8 = (uint8_t*)message; // Assign to a union so that it can be represented as uint32_t
 
 	// Magic initialization constants
@@ -155,8 +155,7 @@ void sha1_message(const char* message, const size_t length, uint8_t digest[20])
 	paddedMessage.msg8 = (unsigned char*)calloc(paddedLength, 1);
 	memcpy(paddedMessage.msg8, message, length);
 	paddedMessage.msg8[length] = 0x80; // Append 1 bit to the end of the message
-	uint64_t lengthInBits = length * 8;
-	memmove(paddedMessage.msg8 + paddedLength - 8, &lengthInBits, 8);
+	paddedMessage.msg64[((paddedLength - 8) >> 3)] = bswap_64((uint64_t)length << 3);
 
 	unsigned int magic[5] = {
 		0x67452301, 0xefcdab89,
@@ -169,6 +168,11 @@ void sha1_message(const char* message, const size_t length, uint8_t digest[20])
 		sha1_block(paddedMessage.msg32 + block, magic);
 
 	free(paddedMessage.msg8);
+
+	for(int i = 0; i < 5; i++)
+	{
+		magic[i] = bswap_32(magic[i]); // Change endianness for uint32
+	}
 	memmove(digest, magic, 20);
 }
 
@@ -178,11 +182,13 @@ void sha1_block(const uint32_t block[16], uint32_t digest[5])
 	#define SHA1_G(b, c, d) ((b) ^ (c) ^ (d))
 	#define SHA1_H(b, c, d) (((b) & (c)) | ((b) & (d)) | ((c) & (d)))
 	#define SHA1_I(b, c, d) ((b) ^ (c) ^ (d))
-	
-	uint32_t* W = calloc(80, 4);
 
-	memcpy(W, block, 64);
+	uint32_t* W = (uint32_t*)calloc(80, 4);
 
+	for(int t = 0; t < 16; t++)
+	{
+		W[t] = bswap_32(block[t]);
+	}
 	uint32_t A = digest[0];
 	uint32_t B = digest[1];
 	uint32_t C = digest[2];
@@ -191,7 +197,7 @@ void sha1_block(const uint32_t block[16], uint32_t digest[5])
 
 	for(int t = 16; t < 80; t++) // Calculate W[0] .. W[79]
 		W[t] = ROL32(W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16], 1);
-	
+
 	uint32_t temp;
 	for(int t = 0; t < 80; t++)
 	{
@@ -217,6 +223,7 @@ void sha1_block(const uint32_t block[16], uint32_t digest[5])
 		B = A;
 		A = temp;
 	}
+	
 	free(W);
 	digest[0] = digest[0] + A;
 	digest[1] = digest[1] + B;
