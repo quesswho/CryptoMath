@@ -4,7 +4,7 @@
 #include "cryptomath.h"
 
 #define MEASURE_SPEED 1
-#define MD5 1
+#define MD5 0
 #define SHA1 1
 
 int main()
@@ -15,7 +15,7 @@ int main()
 	const char str[] = "The quick brown fox jumps over the lazy dog";
 	unsigned char hash[20];
 #if MEASURE_SPEED
-	const int iterations = 10000000;
+	const int iterations = 5000000;
 	int len = strlen(str);
 	clock_t start = clock();
 	for(int i = 0; i < iterations; i++)

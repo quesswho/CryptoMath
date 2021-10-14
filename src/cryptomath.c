@@ -183,47 +183,123 @@ void sha1_block(const uint32_t block[16], uint32_t digest[5])
 	#define SHA1_H(b, c, d) (((b) & (c)) | ((b) & (d)) | ((c) & (d)))
 	#define SHA1_I(b, c, d) ((b) ^ (c) ^ (d))
 
+	#define SHA1_ROUNDF(a, b, c, d, e, w) \
+	((e) = ROL32((a), 5) + SHA1_F((b), (c), (d)) + (e) + (w) + 0x5a827999); \
+	((b) = ROL32((b), 30))
+	
+	#define SHA1_ROUNDG(a, b, c, d, e, w) \
+	((e) = ROL32((a), 5) + SHA1_G((b), (c), (d)) + (e) + (w) + 0x6ed9eba1); \
+	((b) = ROL32((b), 30))
+	
+	#define SHA1_ROUNDH(a, b, c, d, e, w) \
+	((e) = ROL32((a), 5) + SHA1_H((b), (c), (d)) + (e) + (w) + 0x8f1bbcdc); \
+	((b) = ROL32((b), 30))
+	
+	#define SHA1_ROUNDI(a, b, c, d, e, w) \
+	((e) = ROL32((a), 5) + SHA1_I((b), (c), (d)) + (e) + (w) + 0xca62c1d6); \
+	((b) = ROL32((b), 30))
+	
 	uint32_t* W = (uint32_t*)calloc(80, 4);
-
-	for(int t = 0; t < 16; t++)
-	{
-		W[t] = bswap_32(block[t]);
-	}
+	
 	uint32_t A = digest[0];
 	uint32_t B = digest[1];
 	uint32_t C = digest[2];
 	uint32_t D = digest[3];
 	uint32_t E = digest[4];
 
+	for(int t = 0; t < 16; t++)
+	{
+		W[t] = bswap_32(block[t]);
+	}
+
 	for(int t = 16; t < 80; t++) // Calculate W[0] .. W[79]
 		W[t] = ROL32(W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16], 1);
-
-	uint32_t temp;
-	for(int t = 0; t < 80; t++)
-	{
-		if(t < 20)
-		{
-			temp = ROL32(A, 5) + SHA1_F(B, C, D) + E + W[t] + 0x5a827999;
-		}
-		else if(t < 40)
-		{
-			temp = ROL32(A, 5) + SHA1_G(B, C, D) + E + W[t] + 0x6ed9eba1;
-		}
-		else if(t < 60)
-		{
-			temp = ROL32(A, 5) + SHA1_H(B, C, D) + E + W[t] + 0x8f1bbcdc;
-		}
-		else
-		{
-			temp = ROL32(A, 5) + SHA1_I(B, C, D) + E + W[t] + 0xca62c1d6;
-		}
-		E = D;
-		D = C;
-		C = ROL32(B, 30);
-		B = A;
-		A = temp;
-	}
 	
+	SHA1_ROUNDF(A, B, C, D, E, W[0]);
+	SHA1_ROUNDF(E, A, B, C, D, W[1]);
+	SHA1_ROUNDF(D, E, A, B, C, W[2]);
+	SHA1_ROUNDF(C, D, E, A, B, W[3]);
+	SHA1_ROUNDF(B, C, D, E, A, W[4]);
+	SHA1_ROUNDF(A, B, C, D, E, W[5]);
+	SHA1_ROUNDF(E, A, B, C, D, W[6]);
+	SHA1_ROUNDF(D, E, A, B, C, W[7]);
+	SHA1_ROUNDF(C, D, E, A, B, W[8]);
+	SHA1_ROUNDF(B, C, D, E, A, W[9]);
+	SHA1_ROUNDF(A, B, C, D, E, W[10]);
+	SHA1_ROUNDF(E, A, B, C, D, W[11]);
+	SHA1_ROUNDF(D, E, A, B, C, W[12]);
+	SHA1_ROUNDF(C, D, E, A, B, W[13]);
+	SHA1_ROUNDF(B, C, D, E, A, W[14]);
+	SHA1_ROUNDF(A, B, C, D, E, W[15]);
+	SHA1_ROUNDF(E, A, B, C, D, W[16]);
+	SHA1_ROUNDF(D, E, A, B, C, W[17]);
+	SHA1_ROUNDF(C, D, E, A, B, W[18]);
+	SHA1_ROUNDF(B, C, D, E, A, W[19]);
+	
+	SHA1_ROUNDG(A, B, C, D, E, W[20]);
+	SHA1_ROUNDG(E, A, B, C, D, W[21]);
+	SHA1_ROUNDG(D, E, A, B, C, W[22]);
+	SHA1_ROUNDG(C, D, E, A, B, W[23]);
+	SHA1_ROUNDG(B, C, D, E, A, W[24]);
+	SHA1_ROUNDG(A, B, C, D, E, W[25]);
+	SHA1_ROUNDG(E, A, B, C, D, W[26]);
+	SHA1_ROUNDG(D, E, A, B, C, W[27]);
+	SHA1_ROUNDG(C, D, E, A, B, W[28]);
+	SHA1_ROUNDG(B, C, D, E, A, W[29]);
+	SHA1_ROUNDG(A, B, C, D, E, W[30]);
+	SHA1_ROUNDG(E, A, B, C, D, W[31]);
+	SHA1_ROUNDG(D, E, A, B, C, W[32]);
+	SHA1_ROUNDG(C, D, E, A, B, W[33]);
+	SHA1_ROUNDG(B, C, D, E, A, W[34]);
+	SHA1_ROUNDG(A, B, C, D, E, W[35]);
+	SHA1_ROUNDG(E, A, B, C, D, W[36]);
+	SHA1_ROUNDG(D, E, A, B, C, W[37]);
+	SHA1_ROUNDG(C, D, E, A, B, W[38]);
+	SHA1_ROUNDG(B, C, D, E, A, W[39]);
+	
+	
+	SHA1_ROUNDH(A, B, C, D, E, W[40]);
+	SHA1_ROUNDH(E, A, B, C, D, W[41]);
+	SHA1_ROUNDH(D, E, A, B, C, W[42]);
+	SHA1_ROUNDH(C, D, E, A, B, W[43]);
+	SHA1_ROUNDH(B, C, D, E, A, W[44]);
+	SHA1_ROUNDH(A, B, C, D, E, W[45]);
+	SHA1_ROUNDH(E, A, B, C, D, W[46]);
+	SHA1_ROUNDH(D, E, A, B, C, W[47]);
+	SHA1_ROUNDH(C, D, E, A, B, W[48]);
+	SHA1_ROUNDH(B, C, D, E, A, W[49]);
+	SHA1_ROUNDH(A, B, C, D, E, W[50]);
+	SHA1_ROUNDH(E, A, B, C, D, W[51]);
+	SHA1_ROUNDH(D, E, A, B, C, W[52]);
+	SHA1_ROUNDH(C, D, E, A, B, W[53]);
+	SHA1_ROUNDH(B, C, D, E, A, W[54]);
+	SHA1_ROUNDH(A, B, C, D, E, W[55]);
+	SHA1_ROUNDH(E, A, B, C, D, W[56]);
+	SHA1_ROUNDH(D, E, A, B, C, W[57]);
+	SHA1_ROUNDH(C, D, E, A, B, W[58]);
+	SHA1_ROUNDH(B, C, D, E, A, W[59]);
+	
+	SHA1_ROUNDI(A, B, C, D, E, W[60]);
+	SHA1_ROUNDI(E, A, B, C, D, W[61]);
+	SHA1_ROUNDI(D, E, A, B, C, W[62]);
+	SHA1_ROUNDI(C, D, E, A, B, W[63]);
+	SHA1_ROUNDI(B, C, D, E, A, W[64]);
+	SHA1_ROUNDI(A, B, C, D, E, W[65]);
+	SHA1_ROUNDI(E, A, B, C, D, W[66]);
+	SHA1_ROUNDI(D, E, A, B, C, W[67]);
+	SHA1_ROUNDI(C, D, E, A, B, W[68]);
+	SHA1_ROUNDI(B, C, D, E, A, W[69]);
+	SHA1_ROUNDI(A, B, C, D, E, W[70]);
+	SHA1_ROUNDI(E, A, B, C, D, W[71]);
+	SHA1_ROUNDI(D, E, A, B, C, W[72]);
+	SHA1_ROUNDI(C, D, E, A, B, W[73]);
+	SHA1_ROUNDI(B, C, D, E, A, W[74]);
+	SHA1_ROUNDI(A, B, C, D, E, W[75]);
+	SHA1_ROUNDI(E, A, B, C, D, W[76]);
+	SHA1_ROUNDI(D, E, A, B, C, W[77]);
+	SHA1_ROUNDI(C, D, E, A, B, W[78]);
+	SHA1_ROUNDI(B, C, D, E, A, W[79]);
+
 	free(W);
 	digest[0] = digest[0] + A;
 	digest[1] = digest[1] + B;
