@@ -38,6 +38,11 @@ void md5_message(const char* message, const size_t length, uint8_t digest[16])
 void md5_block(const uint32_t block[16], uint32_t digest[4])
 {
 	// MD5 Macros
+	#define MD5_F(b, c, d) (((c) & (b)) | (~(b) & (d)))
+	#define MD5_G(b, c, d) (((d) & (b)) + (~(d) & (c)))
+	#define MD5_H(b, c, d) ((b) ^ (c) ^ (d))
+	#define MD5_I(b, c, d) ((c) ^ ((b) | (~d)))
+	
 	#define MD5_FUNCEND(a, b, f, k, m, s) \
 		((a) = (f) + (a) + (k) + (m)); /* Evaluate f and assign to a */ \
 		((a) = (b) + ROL32((a), (s)));
@@ -46,16 +51,10 @@ void md5_block(const uint32_t block[16], uint32_t digest[4])
 		MD5_FUNCEND((a), (b), MD5_F((b), (c), (d)), (k), (m), (s))
 	#define MD5_FUNCG(a, b, c, d, k, m, s) \
 		MD5_FUNCEND((a), (b), MD5_G((b), (c), (d)), (k), (m), (s))
-	
 	#define MD5_FUNCH(a, b, c, d, k, m, s) \
 		MD5_FUNCEND((a), (b), MD5_H((b), (c), (d)), (k), (m), (s))
 	#define MD5_FUNCI(a, b, c, d, k, m, s) \
 		MD5_FUNCEND((a), (b), MD5_I((b), (c), (d)), (k), (m), (s))
-
-	#define MD5_F(b, c, d) (((c) & (b)) | (~(b) & (d)))
-	#define MD5_G(b, c, d) (((d) & (b)) + (~(d) & (c)))
-	#define MD5_H(b, c, d) ((b) ^ (c) ^ (d))
-	#define MD5_I(b, c, d) ((c) ^ ((b) | (~d)))
 
 	// These will be optimized after inlining
 	uint32_t A = digest[0];
@@ -178,26 +177,24 @@ void sha1_message(const char* message, const size_t length, uint8_t digest[20])
 
 void sha1_block(const uint32_t block[16], uint32_t digest[5])
 {
+	// SHA1 Macros
 	#define SHA1_F(b, c, d) (((b) & (c)) | ((~(b)) & (d)))
 	#define SHA1_G(b, c, d) ((b) ^ (c) ^ (d))
 	#define SHA1_H(b, c, d) (((b) & (c)) | ((b) & (d)) | ((c) & (d)))
 	#define SHA1_I(b, c, d) ((b) ^ (c) ^ (d))
 
 	#define SHA1_ROUNDF(a, b, c, d, e, w) \
-	((e) = ROL32((a), 5) + SHA1_F((b), (c), (d)) + (e) + (w) + 0x5a827999); \
-	((b) = ROL32((b), 30))
-	
+		((e) = ROL32((a), 5) + SHA1_F((b), (c), (d)) + (e) + (w) + 0x5a827999); \
+		((b) = ROL32((b), 30))
 	#define SHA1_ROUNDG(a, b, c, d, e, w) \
-	((e) = ROL32((a), 5) + SHA1_G((b), (c), (d)) + (e) + (w) + 0x6ed9eba1); \
-	((b) = ROL32((b), 30))
-	
+		((e) = ROL32((a), 5) + SHA1_G((b), (c), (d)) + (e) + (w) + 0x6ed9eba1); \
+		((b) = ROL32((b), 30))
 	#define SHA1_ROUNDH(a, b, c, d, e, w) \
-	((e) = ROL32((a), 5) + SHA1_H((b), (c), (d)) + (e) + (w) + 0x8f1bbcdc); \
-	((b) = ROL32((b), 30))
-	
+		((e) = ROL32((a), 5) + SHA1_H((b), (c), (d)) + (e) + (w) + 0x8f1bbcdc); \
+		((b) = ROL32((b), 30))
 	#define SHA1_ROUNDI(a, b, c, d, e, w) \
-	((e) = ROL32((a), 5) + SHA1_I((b), (c), (d)) + (e) + (w) + 0xca62c1d6); \
-	((b) = ROL32((b), 30))
+		((e) = ROL32((a), 5) + SHA1_I((b), (c), (d)) + (e) + (w) + 0xca62c1d6); \
+		((b) = ROL32((b), 30))
 	
 	uint32_t* W = (uint32_t*)calloc(80, 4);
 	
